@@ -12,15 +12,15 @@ fn main() {
 
 fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> f64 {
     let oc = center - ray.origin();
-    let a = ray.direction().dot(ray.direction());
-    let b = -2.0 * ray.direction().dot(oc);
-    let c = oc.dot(oc) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
+    let a = ray.direction().mag2();
+    let h = ray.direction().dot(oc);
+    let c = oc.mag2() - radius * radius;
+    let discriminant = h * h - a * c;
 
     if discriminant < 0.0 {
         -1.0
     } else {
-        (-b - discriminant.sqrt()) / (2.0 * a)
+        (h - discriminant.sqrt()) / a
     }
 }
 
