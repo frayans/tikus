@@ -1,7 +1,11 @@
 use std::io;
 use std::io::Write;
 
-use tikus::math::{Point3, point3, vec3};
+use tikus::constants::INFINITY;
+use tikus::hittable::Hittable;
+use tikus::hittable_list::HittableList;
+use tikus::math::{point3, vec3};
+use tikus::sphere::Sphere;
 use tikus::{Color, Ray, color};
 
 fn main() {
@@ -10,25 +14,9 @@ fn main() {
     }
 }
 
-fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> f64 {
-    let oc = center - ray.origin();
-    let a = ray.direction().mag2();
-    let h = ray.direction().dot(oc);
-    let c = oc.mag2() - radius * radius;
-    let discriminant = h * h - a * c;
-
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (h - discriminant.sqrt()) / a
-    }
-}
-
-fn ray_color(ray: &Ray) -> Color {
-    let t = hit_sphere(&point3(0.0, 0.0, -1.0), 0.5, ray);
-    if t > 0.0 {
-        let n = (ray.at(t) - vec3(0.0, 0.0, -1.0)).norm();
-        0.5 * color(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0)
+fn ray_color<H: Hittable>(ray: &Ray, world: &H) -> Color {
+    if let Some(record) = world.hit(ray, 0.0, INFINITY) {
+        0.5 * (record.normal + color(1.0, 1.0, 1.0))
     } else {
         let unit_dir = ray.direction().norm();
         let a = 0.5 * (unit_dir.y() + 1.0);
@@ -43,6 +31,10 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     // calculate image height, and ensure that it's at least 1.
     let img_h = (img_width as f64 / aspect_ratio) as i32;
     let img_height = if img_h < 1 { 1 } else { img_h };
+
+    let mut world = HittableList::new();
+    world.add(Box::new(Sphere::new(point3(0.0, 0.0, -1.0), 0.5)));
+    world.add(Box::new(Sphere::new(point3(0.0, -100.5, -1.0), 100.0)));
 
     // camera
     let focal_length = 1.0;
@@ -75,7 +67,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
             let ray_direction = pixel_center - camera_center;
             let ray = Ray::new(camera_center, ray_direction);
 
-            let pixel_color = ray_color(&ray);
+            let pixel_color = ray_color(&ray, &world);
             pixel_color.write_to(&mut out)?;
         }
     }
