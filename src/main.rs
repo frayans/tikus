@@ -1,7 +1,7 @@
 use std::io;
 use std::io::Write;
 
-use tikus::math::{point3, vec3};
+use tikus::math::{Point3, point3, vec3};
 use tikus::{Color, Ray, color};
 
 fn main() {
@@ -10,10 +10,23 @@ fn main() {
     }
 }
 
+fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> bool {
+    let oc = center - ray.origin();
+    let a = ray.direction().dot(ray.direction());
+    let b = -2.0 * ray.direction().dot(oc);
+    let c = oc.dot(oc) - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+    discriminant >= 0.0
+}
+
 fn ray_color(ray: &Ray) -> Color {
-    let unit_dir = ray.direction().norm();
-    let a = 0.5 * (unit_dir.y() + 1.0);
-    (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0)
+    if hit_sphere(&point3(0.0, 0.0, -1.0), 0.5, ray) {
+        color(1.0, 0.0, 0.0)
+    } else {
+        let unit_dir = ray.direction().norm();
+        let a = 0.5 * (unit_dir.y() + 1.0);
+        (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0)
+    }
 }
 
 fn try_main() -> Result<(), Box<dyn std::error::Error>> {
