@@ -4,6 +4,7 @@ use std::io::Write;
 use tikus::constants::INFINITY;
 use tikus::hittable::Hittable;
 use tikus::hittable_list::HittableList;
+use tikus::interval::Interval;
 use tikus::math::{point3, vec3};
 use tikus::sphere::Sphere;
 use tikus::{Color, Ray, color};
@@ -15,7 +16,7 @@ fn main() {
 }
 
 fn ray_color<H: Hittable>(ray: &Ray, world: &H) -> Color {
-    if let Some(record) = world.hit(ray, 0.0, INFINITY) {
+    if let Some(record) = world.hit(ray, Interval::new(0.0, INFINITY)) {
         0.5 * (record.normal + color(1.0, 1.0, 1.0))
     } else {
         let unit_dir = ray.direction().norm();

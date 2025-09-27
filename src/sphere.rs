@@ -1,5 +1,7 @@
 use crate::{
+    Ray,
     hittable::{HitRecord, Hittable, calculate_face_normal},
+    interval::Interval,
     math::Point3,
 };
 
@@ -18,7 +20,7 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &crate::Ray, ray_tmin: f64, ray_tmax: f64) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord> {
         let oc = self.center + ray.origin();
         let a = ray.direction().mag2();
         let h = ray.direction().dot(oc);
@@ -33,9 +35,9 @@ impl Hittable for Sphere {
 
         // make sure root is between an acceptable range
         let r = (h - sqrtd) / a;
-        let root = if r <= ray_tmin || r >= ray_tmax {
+        let root = if !ray_t.surrounds(r) {
             let r2 = (h + sqrtd) / a;
-            if r2 <= ray_tmin || r2 >= ray_tmax {
+            if !ray_t.surrounds(r2) {
                 return None;
             }
             r2
