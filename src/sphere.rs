@@ -1,8 +1,7 @@
 use crate::{
-    Ray,
     hittable::{HitRecord, Hittable, calculate_face_normal},
-    interval::Interval,
-    math::Point3,
+    math::{Interval, Point3},
+    ray::Ray,
 };
 
 pub struct Sphere {

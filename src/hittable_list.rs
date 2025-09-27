@@ -1,7 +1,7 @@
 use crate::{
-    Ray,
     hittable::{HitRecord, Hittable},
-    interval::Interval,
+    math::Interval,
+    ray::Ray,
 };
 
 pub struct HittableList {

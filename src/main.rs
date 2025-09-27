@@ -1,13 +1,14 @@
 use std::io;
 use std::io::Write;
 
-use tikus::constants::INFINITY;
-use tikus::hittable::Hittable;
-use tikus::hittable_list::HittableList;
-use tikus::interval::Interval;
-use tikus::math::{point3, vec3};
-use tikus::sphere::Sphere;
-use tikus::{Color, Ray, color};
+use tikus::{
+    color::{Color, color},
+    hittable::Hittable,
+    hittable_list::HittableList,
+    math::{INFINITY, Interval, point3, vec3},
+    ray::Ray,
+    sphere::Sphere,
+};
 
 fn main() {
     if let Err(e) = try_main() {

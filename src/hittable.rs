@@ -1,7 +1,6 @@
 use crate::{
-    Ray,
-    interval::Interval,
-    math::{Point3, Vec3},
+    math::{Interval, Point3, Vec3},
+    ray::Ray,
 };
 
 pub struct HitRecord {
