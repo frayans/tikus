@@ -1,5 +1,5 @@
 use crate::{
-    hittable::{HitRecord, Hittable},
+    hittable::{HitRecord, Hittable, calculate_face_normal},
     math::Point3,
 };
 
@@ -44,10 +44,12 @@ impl Hittable for Sphere {
         };
 
         let p = ray.at(root);
+        let (front_face, normal) = calculate_face_normal(ray, (p - self.center) / self.radius);
         let record = HitRecord {
             point: p,
             t: root,
-            normal: (p - self.center) / self.radius,
+            front_face,
+            normal,
         };
 
         Some(record)
