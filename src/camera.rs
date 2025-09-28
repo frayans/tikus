@@ -19,6 +19,7 @@ pub struct Camera {
     pub aspect_ratio: f64,
     pub img_width: i32,
     pub samples_per_pixel: i32,
+    pub max_depth: i32,
 }
 
 struct ViewportData {
@@ -50,7 +51,7 @@ pub fn render<H: Hittable>(camera: &Camera, world: &H) -> io::Result<()> {
             let mut pixel_color = Color::zero();
             for _sample in 0..camera.samples_per_pixel {
                 let ray = get_ray(&viewport_data, i, j);
-                pixel_color += ray_color(&mut rng, &ray, world);
+                pixel_color += ray_color(&mut rng, camera.max_depth, &ray, world);
             }
 
             write_color(viewport_data.pixel_samples_scale * pixel_color, &mut buf)?;
@@ -120,10 +121,14 @@ fn sample_square() -> Vec3 {
     Vec3(random_double() - 0.5, random_double() - 0.5, 0.0)
 }
 
-fn ray_color<H: Hittable, R: Rng>(rng: &mut R, ray: &Ray, world: &H) -> Color {
+fn ray_color<H: Hittable, R: Rng>(rng: &mut R, max_depth: i32, ray: &Ray, world: &H) -> Color {
+    if max_depth <= 0 {
+        return Color::zero();
+    }
+
     if let Some(record) = world.hit(ray, 0.0..INFINITY) {
         let dir = Vec3::random_on_hemisphere(rng, &record.normal);
-        0.5 * ray_color(rng, &Ray::new(record.point, dir), world)
+        0.5 * ray_color(rng, max_depth - 1, &Ray::new(record.point, dir), world)
     } else {
         let unit_dir = ray.direction().norm();
         let a = 0.5 * (unit_dir.y() + 1.0);

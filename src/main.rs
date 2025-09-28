@@ -27,6 +27,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
         aspect_ratio: 16.0 / 9.0,
         img_width: 400,
         samples_per_pixel: 100,
+        max_depth: 50,
     };
 
     render(&camera, &world)?;
