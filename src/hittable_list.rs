@@ -29,7 +29,7 @@ impl Hittable for HittableList<'_> {
         let mut closest_so_far = ray_t.end;
 
         for object in &self.objects {
-            if let Some(rec) = object.hit(ray, 0.0..closest_so_far) {
+            if let Some(rec) = object.hit(ray, ray_t.start..closest_so_far) {
                 closest_so_far = rec.t;
                 temp_rec = Some(rec);
             }
