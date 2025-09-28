@@ -5,22 +5,25 @@ use std::{
 };
 
 use indicatif::ProgressIterator;
+use rand::Rng;
 
 use crate::{
     color::{Color, color},
     hittable::Hittable,
     math::{Point3, Vec3, point3},
     ray::Ray,
+    utility::clamp,
 };
 
 pub struct Camera {
     pub aspect_ratio: f64,
     pub img_width: i32,
+    pub samples_per_pixel: i32,
 }
 
 struct ViewportData {
-    img_width: i32,
     img_height: i32,
+    pixel_samples_scale: f64,
     center: Point3,
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
@@ -37,19 +40,18 @@ pub fn render<H: Hittable>(camera: &Camera, world: &H) -> io::Result<()> {
     writeln!(
         buf,
         "P3\n{} {}\n255",
-        viewport_data.img_width, viewport_data.img_height
+        camera.img_width, viewport_data.img_height
     )?;
 
     for j in (0..viewport_data.img_height).progress() {
-        for i in 0..viewport_data.img_width {
-            let pixel_center = viewport_data.pixel00_loc
-                + (i as f64 * viewport_data.pixel_delta_u)
-                + (j as f64 * viewport_data.pixel_delta_v);
-            let ray_direction = pixel_center - viewport_data.center;
-            let ray = Ray::new(viewport_data.center, ray_direction);
+        for i in 0..camera.img_width {
+            let mut pixel_color = Color::zero();
+            for _sample in 0..camera.samples_per_pixel {
+                let ray = get_ray(&viewport_data, i, j);
+                pixel_color += ray_color(&ray, world);
+            }
 
-            let pixel_color = ray_color(&ray, world);
-            write_color(pixel_color, &mut buf)?;
+            write_color(viewport_data.pixel_samples_scale * pixel_color, &mut buf)?;
         }
     }
 
@@ -65,6 +67,8 @@ fn initialize(camera: &Camera) -> ViewportData {
     // calculate image height, and ensure that it's at least 1.
     let img_h = (img_width as f64 / aspect_ratio) as i32;
     let img_height = if img_h < 1 { 1 } else { img_h };
+
+    let pixel_samples_scale = 1.0 / camera.samples_per_pixel as f64;
 
     // camera
     let focal_length = 1.0;
@@ -86,13 +90,32 @@ fn initialize(camera: &Camera) -> ViewportData {
     let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
     ViewportData {
-        img_width,
         img_height,
+        pixel_samples_scale,
         center,
         pixel00_loc,
         pixel_delta_u,
         pixel_delta_v,
     }
+}
+
+fn get_ray(v_data: &ViewportData, i: i32, j: i32) -> Ray {
+    let offset = sample_square();
+    let pixel_sample = v_data.pixel00_loc
+        + ((i as f64 + offset.x()) * v_data.pixel_delta_u)
+        + ((j as f64 + offset.y()) * v_data.pixel_delta_v);
+    let ray_origin = v_data.center;
+    let ray_direction = pixel_sample - ray_origin;
+
+    Ray::new(ray_origin, ray_direction)
+}
+
+fn sample_square() -> Vec3 {
+    let random_double = || {
+        let mut rng = rand::rng();
+        rng.random_range(0.0..1.0)
+    };
+    Vec3(random_double() - 0.5, random_double() - 0.5, 0.0)
 }
 
 fn ray_color<H: Hittable>(ray: &Ray, world: &H) -> Color {
@@ -110,9 +133,10 @@ fn write_color<W: Write>(c: Color, mut w: W) -> io::Result<()> {
     let g = c.y();
     let b = c.z();
 
-    let ir = (255.999 * r) as i32;
-    let ig = (255.999 * g) as i32;
-    let ib = (255.999 * b) as i32;
+    let intensity = 0.000..0.999;
+    let ir = (256.0 * clamp(&intensity, r)) as i32;
+    let ig = (256.0 * clamp(&intensity, g)) as i32;
+    let ib = (256.0 * clamp(&intensity, b)) as i32;
 
     writeln!(w, "{} {} {}", ir, ig, ib)?;
     Ok(())

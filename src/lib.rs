@@ -5,3 +5,4 @@ pub mod hittable_list;
 pub mod math;
 pub mod ray;
 pub mod sphere;
+pub mod utility;

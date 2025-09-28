@@ -26,6 +26,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
         img_width: 400,
+        samples_per_pixel: 100,
     };
 
     render(&camera, &world)?;

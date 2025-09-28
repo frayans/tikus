@@ -90,9 +90,9 @@ impl ops::Add<&Vec3> for Vec3 {
 
 impl ops::AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
-        self.0 = rhs.0;
-        self.1 = rhs.1;
-        self.2 = rhs.2;
+        self.0 += rhs.0;
+        self.1 += rhs.1;
+        self.2 += rhs.2;
     }
 }
 
