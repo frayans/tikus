@@ -1,9 +1,44 @@
-use std::ops;
+use std::ops::{self, Range};
+
+use rand::Rng;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Vec3(pub f64, pub f64, pub f64);
 
 impl Vec3 {
+    pub fn random<R: Rng>(rng: &mut R) -> Self {
+        Vec3(rng.random(), rng.random(), rng.random())
+    }
+
+    pub fn random_range<R: Rng>(rng: &mut R, range: Range<f64>) -> Self {
+        let start = range.start;
+        let end = range.end;
+        Vec3(
+            rng.random_range(start..end),
+            rng.random_range(start..end),
+            rng.random_range(start..end),
+        )
+    }
+
+    pub fn random_unit_vector<R: Rng>(rng: &mut R) -> Self {
+        loop {
+            let p = Self::random(rng);
+            let lensq = p.mag2();
+            if 1e-160 < lensq && lensq <= 1.0 {
+                return p / lensq.sqrt();
+            }
+        }
+    }
+
+    pub fn random_on_hemisphere<R: Rng>(rng: &mut R, normal: &Vec3) -> Vec3 {
+        let on_unit_sphere = Self::random_unit_vector(rng);
+        if on_unit_sphere.dot(*normal) > 0.0 {
+            on_unit_sphere
+        } else {
+            -on_unit_sphere
+        }
+    }
+
     pub fn x(&self) -> f64 {
         self.0
     }

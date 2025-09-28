@@ -120,7 +120,9 @@ fn sample_square() -> Vec3 {
 
 fn ray_color<H: Hittable>(ray: &Ray, world: &H) -> Color {
     if let Some(record) = world.hit(ray, 0.0..INFINITY) {
-        0.5 * (record.normal + color(1.0, 1.0, 1.0))
+        let mut rng = rand::rng();
+        let dir = Vec3::random_on_hemisphere(&mut rng, &record.normal);
+        0.5 * ray_color(&Ray::new(record.point, dir), world)
     } else {
         let unit_dir = ray.direction().norm();
         let a = 0.5 * (unit_dir.y() + 1.0);
@@ -134,9 +136,9 @@ fn write_color<W: Write>(c: Color, mut w: W) -> io::Result<()> {
     let b = c.z();
 
     let intensity = 0.000..0.999;
-    let ir = (256.0 * clamp(&intensity, r)) as i32;
-    let ig = (256.0 * clamp(&intensity, g)) as i32;
-    let ib = (256.0 * clamp(&intensity, b)) as i32;
+    let ir = (256.0 * clamp(intensity.clone(), r)) as i32;
+    let ig = (256.0 * clamp(intensity.clone(), g)) as i32;
+    let ib = (256.0 * clamp(intensity, b)) as i32;
 
     writeln!(w, "{} {} {}", ir, ig, ib)?;
     Ok(())
