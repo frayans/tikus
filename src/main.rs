@@ -14,8 +14,14 @@ fn main() {
 fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let mut world = HittableList::new();
 
-    world.add(Box::new(Sphere::new(point3(0.0, 0.0, -1.0), 0.5)));
-    world.add(Box::new(Sphere::new(point3(0.0, -100.5, -1.0), 100.0)));
+    world.add(Sphere {
+        center: point3(0.0, 0.0, -1.0),
+        radius: 0.5,
+    });
+    world.add(Sphere {
+        center: point3(0.0, -100.5, -1.0),
+        radius: 100.0,
+    });
 
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,

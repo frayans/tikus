@@ -1,25 +1,18 @@
+use std::ops::Range;
+
 use crate::{
     hittable::{HitRecord, Hittable, calculate_face_normal},
-    math::{Interval, Point3},
+    math::Point3,
     ray::Ray,
 };
 
 pub struct Sphere {
-    center: Point3,
-    radius: f64,
-}
-
-impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Self {
-        Self {
-            center,
-            radius: radius.max(0.0),
-        }
-    }
+    pub center: Point3,
+    pub radius: f64,
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord> {
         let oc = self.center + ray.origin();
         let a = ray.direction().mag2();
         let h = ray.direction().dot(oc);
@@ -34,9 +27,9 @@ impl Hittable for Sphere {
 
         // make sure root is between an acceptable range
         let r = (h - sqrtd) / a;
-        let root = if !ray_t.surrounds(r) {
+        let root = if !ray_t.contains(&r) {
             let r2 = (h + sqrtd) / a;
-            if !ray_t.surrounds(r2) {
+            if !ray_t.contains(&r2) {
                 return None;
             }
             r2

@@ -1,5 +1,7 @@
+use std::ops::Range;
+
 use crate::{
-    math::{Interval, Point3, Vec3},
+    math::{Point3, Vec3},
     ray::Ray,
 };
 
@@ -33,5 +35,5 @@ pub fn calculate_face_normal(ray: &Ray, outward_normal: Vec3) -> (bool, Vec3) {
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord>;
+    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord>;
 }

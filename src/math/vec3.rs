@@ -1,17 +1,9 @@
 use std::ops;
 
-pub fn vec3(x: f64, y: f64, z: f64) -> Vec3 {
-    Vec3(x, y, z)
-}
-
 #[derive(Clone, Copy, Debug, Default)]
-pub struct Vec3(f64, f64, f64);
+pub struct Vec3(pub f64, pub f64, pub f64);
 
 impl Vec3 {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Self(x, y, z)
-    }
-
     pub fn x(&self) -> f64 {
         self.0
     }
@@ -60,7 +52,7 @@ impl ops::Neg for Vec3 {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Vec3::new(-self.x(), -self.y(), -self.z())
+        Vec3(-self.x(), -self.y(), -self.z())
     }
 }
 
@@ -68,7 +60,7 @@ impl ops::Neg for &Vec3 {
     type Output = Vec3;
 
     fn neg(self) -> Self::Output {
-        Vec3::new(-self.x(), -self.y(), -self.z())
+        Vec3(-self.x(), -self.y(), -self.z())
     }
 }
 
@@ -76,7 +68,7 @@ impl ops::Add for Vec3 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Vec3::new(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
+        Vec3(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
     }
 }
 
@@ -84,7 +76,7 @@ impl ops::Add<Vec3> for &Vec3 {
     type Output = Vec3;
 
     fn add(self, rhs: Vec3) -> Self::Output {
-        Vec3::new(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
+        Vec3(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
     }
 }
 
@@ -92,7 +84,7 @@ impl ops::Add<&Vec3> for Vec3 {
     type Output = Vec3;
 
     fn add(self, rhs: &Vec3) -> Self::Output {
-        Vec3::new(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
+        Vec3(self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z())
     }
 }
 
@@ -140,7 +132,7 @@ impl ops::Mul<f64> for Vec3 {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs)
+        Vec3(self.x() * rhs, self.y() * rhs, self.z() * rhs)
     }
 }
 
@@ -180,6 +172,6 @@ impl ops::Div<Vec3> for f64 {
     type Output = Vec3;
 
     fn div(self, rhs: Vec3) -> Self::Output {
-        Vec3::new(self / rhs.x(), self / rhs.y(), self / rhs.z())
+        Vec3(self / rhs.x(), self / rhs.y(), self / rhs.z())
     }
 }
