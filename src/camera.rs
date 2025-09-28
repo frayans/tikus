@@ -126,7 +126,7 @@ fn ray_color<H: Hittable, R: Rng>(rng: &mut R, max_depth: i32, ray: &Ray, world:
         return Color::zero();
     }
 
-    if let Some(record) = world.hit(ray, 0.0..INFINITY) {
+    if let Some(record) = world.hit(ray, 0.001..INFINITY) {
         let dir = Vec3::random_on_hemisphere(rng, &record.normal);
         0.5 * ray_color(rng, max_depth - 1, &Ray::new(record.point, dir), world)
     } else {
