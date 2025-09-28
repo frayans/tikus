@@ -43,12 +43,14 @@ pub fn render<H: Hittable>(camera: &Camera, world: &H) -> io::Result<()> {
         camera.img_width, viewport_data.img_height
     )?;
 
+    let mut rng = rand::rng();
+
     for j in (0..viewport_data.img_height).progress() {
         for i in 0..camera.img_width {
             let mut pixel_color = Color::zero();
             for _sample in 0..camera.samples_per_pixel {
                 let ray = get_ray(&viewport_data, i, j);
-                pixel_color += ray_color(&ray, world);
+                pixel_color += ray_color(&mut rng, &ray, world);
             }
 
             write_color(viewport_data.pixel_samples_scale * pixel_color, &mut buf)?;
@@ -118,11 +120,10 @@ fn sample_square() -> Vec3 {
     Vec3(random_double() - 0.5, random_double() - 0.5, 0.0)
 }
 
-fn ray_color<H: Hittable>(ray: &Ray, world: &H) -> Color {
+fn ray_color<H: Hittable, R: Rng>(rng: &mut R, ray: &Ray, world: &H) -> Color {
     if let Some(record) = world.hit(ray, 0.0..INFINITY) {
-        let mut rng = rand::rng();
-        let dir = Vec3::random_on_hemisphere(&mut rng, &record.normal);
-        0.5 * ray_color(&Ray::new(record.point, dir), world)
+        let dir = Vec3::random_on_hemisphere(rng, &record.normal);
+        0.5 * ray_color(rng, &Ray::new(record.point, dir), world)
     } else {
         let unit_dir = ray.direction().norm();
         let a = 0.5 * (unit_dir.y() + 1.0);

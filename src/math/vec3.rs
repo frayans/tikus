@@ -22,7 +22,7 @@ impl Vec3 {
 
     pub fn random_unit_vector<R: Rng>(rng: &mut R) -> Self {
         loop {
-            let p = Self::random(rng);
+            let p = Self::random_range(rng, -1.0..1.0);
             let lensq = p.mag2();
             if 1e-160 < lensq && lensq <= 1.0 {
                 return p / lensq.sqrt();
