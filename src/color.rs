@@ -1,7 +1,7 @@
-use crate::math::Vec3;
+use crate::math::{DVec3, dvec3};
 
-pub type Color = Vec3;
+pub type Color = DVec3;
 
-pub fn color(r: f64, g: f64, b: f64) -> Color {
-    Vec3(r, g, b)
+pub const fn color(r: f64, g: f64, b: f64) -> Color {
+    dvec3(r, g, b)
 }
