@@ -7,15 +7,14 @@ use crate::{
     ray::Ray,
 };
 
-#[derive(Clone, Copy)]
-pub struct Sphere<M: Material + Copy> {
+pub struct Sphere {
     pub center: Point3,
     pub radius: f64,
-    pub mat: M,
+    pub mat: Material,
 }
 
-impl<M: Material + Copy> Hittable for Sphere<M> {
-    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord<'_>> {
+impl Hittable for Sphere {
+    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord> {
         let oc = self.center - ray.origin();
         let a = ray.direction().length_squared();
         let h = ray.direction().dot(oc);

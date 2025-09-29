@@ -2,7 +2,7 @@ use tikus::{
     camera::{Camera, render},
     color::color,
     hittable_list::HittableList,
-    material::{Lambertian, Metal},
+    material::Material,
     math::point3,
     sphere::Sphere,
 };
@@ -16,20 +16,10 @@ fn main() {
 fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let mut world = HittableList::new();
 
-    let material_ground = Lambertian {
-        albedo: color(0.8, 0.8, 0.0),
-    };
-    let material_center = Lambertian {
-        albedo: color(0.1, 0.2, 0.5),
-    };
-    let material_left = Metal {
-        albedo: color(0.8, 0.8, 0.8),
-        fuzz: 0.3,
-    };
-    let material_right = Metal {
-        albedo: color(0.8, 0.6, 0.2),
-        fuzz: 1.0,
-    };
+    let material_ground = Material::new_lambertian(color(0.8, 0.8, 0.0));
+    let material_center = Material::new_lambertian(color(0.1, 0.2, 0.5));
+    let material_left = Material::new_metal(color(0.8, 0.8, 0.8), 0.3);
+    let material_right = Material::new_metal(color(0.8, 0.6, 0.2), 1.0);
 
     world.add(Sphere {
         center: point3(0.0, -100.5, -1.0),
@@ -54,8 +44,8 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
 
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
-        img_width: 400,
-        samples_per_pixel: 100,
+        img_width: 1280,
+        samples_per_pixel: 128,
         max_depth: 50,
     };
 

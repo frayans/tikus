@@ -6,19 +6,19 @@ use crate::{
     ray::Ray,
 };
 
-pub struct HitRecord<'a> {
+pub struct HitRecord {
     pub point: Point3,
     pub t: f64,
     pub normal: DVec3,
-    pub mat: Box<dyn Material + 'a>,
+    pub mat: Material,
     pub front_face: bool,
 }
 
-impl<'a> HitRecord<'a> {
-    pub fn with_face_normal<M: Material + Copy + 'a>(
+impl HitRecord {
+    pub fn with_face_normal(
         point: Point3,
         t: f64,
-        mat: &M,
+        mat: &Material,
         ray: &Ray,
         outward_normal: DVec3,
     ) -> Self {
@@ -27,7 +27,7 @@ impl<'a> HitRecord<'a> {
             point,
             t,
             normal,
-            mat: Box::new(*mat),
+            mat: *mat,
 
             front_face,
         }
@@ -45,5 +45,5 @@ impl<'a> HitRecord<'a> {
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord<'_>>;
+    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord>;
 }

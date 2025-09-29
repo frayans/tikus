@@ -6,7 +6,9 @@ use std::{
 };
 
 use indicatif::ProgressIterator;
-use rand::Rng;
+use itertools::Itertools;
+use rand::{Rng, SeedableRng};
+use rand_xoshiro::Xoshiro256Plus;
 
 use crate::{
     color::{Color, color, linear_to_gamma},
@@ -49,20 +51,37 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         camera.img_width, viewport_data.img_height
     )?;
 
-    let mut rng = rand::rng();
+    let mut rng = Xoshiro256Plus::seed_from_u64(1234);
 
-    for j in (0..viewport_data.img_height).progress() {
-        for i in 0..camera.img_width {
-            let mut pixel_color = Color::ZERO;
-            for _sample in 0..camera.samples_per_pixel {
-                let ray = get_ray(&viewport_data, i, j);
-                pixel_color += ray_color(&mut rng, camera.max_depth, &ray, world);
-            }
+    let pixels = (0..viewport_data.img_height)
+        .cartesian_product(0..camera.img_width)
+        .map(|(j, i)| {
+            let pixel_color: Color = (0..camera.samples_per_pixel)
+                .map(|_| {
+                    let ray = get_ray(&mut rng, &viewport_data, i, j);
+                    ray_color(&mut rng, camera.max_depth, &ray, world)
+                })
+                .fold(Color::ZERO, move |acc, c| acc + c);
 
-            write_color(viewport_data.pixel_samples_scale * pixel_color, &mut buf)?;
-        }
-    }
+            viewport_data.pixel_samples_scale * pixel_color
+        })
+        .map(|color| format_color(color))
+        .progress_count(viewport_data.img_height as u64 * camera.img_width as u64)
+        .join("\n");
 
+    // for j in (0..viewport_data.img_height).progress() {
+    //     for i in 0..camera.img_width {
+    //         let mut pixel_color = Color::ZERO;
+    //         for _sample in 0..camera.samples_per_pixel {
+    //             let ray = get_ray(&mut rng, &viewport_data, i, j);
+    //             pixel_color += ray_color(&mut rng, camera.max_depth, &ray, world);
+    //         }
+
+    //         write_color(viewport_data.pixel_samples_scale * pixel_color, &mut buf)?;
+    //     }
+    // }
+
+    buf.write(pixels.as_bytes())?;
     buf.flush()?;
 
     Ok(())
@@ -107,8 +126,8 @@ fn initialize(camera: &Camera) -> ViewportData {
     }
 }
 
-fn get_ray(v_data: &ViewportData, i: i32, j: i32) -> Ray {
-    let offset = sample_square();
+fn get_ray<R: Rng>(rng: &mut R, v_data: &ViewportData, i: i32, j: i32) -> Ray {
+    let offset = sample_square(rng);
     let pixel_sample = v_data.pixel00_loc
         + ((i as f64 + offset.x) * v_data.pixel_delta_u)
         + ((j as f64 + offset.y) * v_data.pixel_delta_v);
@@ -118,11 +137,8 @@ fn get_ray(v_data: &ViewportData, i: i32, j: i32) -> Ray {
     Ray::new(ray_origin, ray_direction)
 }
 
-fn sample_square() -> DVec3 {
-    let random_double = || {
-        let mut rng = rand::rng();
-        rng.random_range(0.0..1.0)
-    };
+fn sample_square<R: Rng>(rng: &mut R) -> DVec3 {
+    let random_double = &mut move || rng.random_range(0.0..1.0);
     dvec3(random_double() - 0.5, random_double() - 0.5, 0.0)
 }
 
@@ -132,7 +148,7 @@ fn ray_color<H: Hittable, R: Rng>(rng: &mut R, max_depth: i32, ray: &Ray, world:
     }
 
     if let Some(record) = world.hit(ray, 0.001..INFINITY) {
-        if let Some(scattered) = record.mat.scatter(ray, &record) {
+        if let Some(scattered) = record.mat.scatter(rng, ray, &record) {
             scattered.attenuation * ray_color(rng, max_depth - 1, &scattered.ray, world)
         } else {
             Color::ZERO
@@ -144,7 +160,7 @@ fn ray_color<H: Hittable, R: Rng>(rng: &mut R, max_depth: i32, ray: &Ray, world:
     }
 }
 
-fn write_color<W: Write>(c: Color, mut w: W) -> io::Result<()> {
+fn format_color(c: Color) -> String {
     let r = linear_to_gamma(c.x);
     let g = linear_to_gamma(c.y);
     let b = linear_to_gamma(c.z);
@@ -154,6 +170,5 @@ fn write_color<W: Write>(c: Color, mut w: W) -> io::Result<()> {
     let ig = (256.0 * clamp(intensity.clone(), g)) as i32;
     let ib = (256.0 * clamp(intensity, b)) as i32;
 
-    writeln!(w, "{} {} {}", ir, ig, ib)?;
-    Ok(())
+    format!("{} {} {}", ir, ig, ib)
 }
