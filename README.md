@@ -9,8 +9,8 @@ currently reading [_Ray Tracing in One Weekend_](https://raytracing.github.io/bo
 - [x] 6
 - [x] 7
 - [x] 8
-- [ ] 9
-- [ ] 10
+- [x] 9
+- [x] 10
 - [ ] 11
 - [ ] 12
 - [ ] 13
