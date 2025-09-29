@@ -44,7 +44,6 @@ impl<'a> HitRecord<'a> {
     }
 }
 
-/// Calculates the `front_face: bool` and `normal: DVec3` of a surface
 pub trait Hittable {
     fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord<'_>>;
 }
