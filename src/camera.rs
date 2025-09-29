@@ -9,7 +9,7 @@ use indicatif::ProgressIterator;
 use rand::Rng;
 
 use crate::{
-    color::{Color, color},
+    color::{Color, color, linear_to_gamma},
     hittable::Hittable,
     math::{DVec3, Point3, dvec3, point3, random_unit_vector},
     ray::Ray,
@@ -142,9 +142,9 @@ fn ray_color<H: Hittable, R: Rng>(rng: &mut R, max_depth: i32, ray: &Ray, world:
 }
 
 fn write_color<W: Write>(c: Color, mut w: W) -> io::Result<()> {
-    let r = c.x;
-    let g = c.y;
-    let b = c.z;
+    let r = linear_to_gamma(c.x);
+    let g = linear_to_gamma(c.y);
+    let b = linear_to_gamma(c.z);
 
     let intensity = 0.000..0.999;
     let ir = (256.0 * clamp(intensity.clone(), r)) as i32;
