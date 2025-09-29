@@ -24,7 +24,7 @@ impl<'a> HittableList<'a> {
 }
 
 impl Hittable for HittableList<'_> {
-    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<HitRecord<'_>> {
         let mut temp_rec: Option<HitRecord> = None;
         let mut closest_so_far = ray_t.end;
 

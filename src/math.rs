@@ -43,3 +43,8 @@ pub fn random_on_hemisphere<R: Rng>(rng: &mut R, normal: &DVec3) -> DVec3 {
         -on_unit_sphere
     }
 }
+
+pub fn near_zero(v: DVec3) -> bool {
+    const S: f64 = 1e-8;
+    (v.x.abs() < S) && (v.y.abs() < S) && (v.z.abs() < S)
+}

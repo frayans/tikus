@@ -11,7 +11,7 @@ use rand::Rng;
 use crate::{
     color::{Color, color, linear_to_gamma},
     hittable::Hittable,
-    math::{DVec3, Point3, dvec3, point3, random_unit_vector},
+    math::{DVec3, Point3, dvec3, point3},
     ray::Ray,
     utility::clamp,
 };
@@ -132,8 +132,11 @@ fn ray_color<H: Hittable, R: Rng>(rng: &mut R, max_depth: i32, ray: &Ray, world:
     }
 
     if let Some(record) = world.hit(ray, 0.001..INFINITY) {
-        let dir = record.normal + random_unit_vector(rng);
-        0.5 * ray_color(rng, max_depth - 1, &Ray::new(record.point, dir), world)
+        if let Some(scattered) = record.mat.scatter(ray, &record) {
+            scattered.attenuation * ray_color(rng, max_depth - 1, &scattered.ray, world)
+        } else {
+            Color::ZERO
+        }
     } else {
         let unit_dir = ray.direction().normalize();
         let a = 0.5 * (unit_dir.y + 1.0);
