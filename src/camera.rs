@@ -13,7 +13,7 @@ use rand_xoshiro::Xoshiro256Plus;
 use crate::{
     color::{Color, color, linear_to_gamma},
     hittable::Hittable,
-    math::{DVec3, Point3, dvec3, point3, random_double},
+    math::{DVec3, Point3, dvec3, random_double},
     ray::Ray,
     utility::clamp,
 };
@@ -30,8 +30,15 @@ pub struct Camera {
     pub max_depth: i32,
     /// Vertical fov (in radians)
     pub vfov: f64,
+    /// Point camera is looking from
+    pub lookfrom: Point3,
+    /// Point camera is looking at
+    pub lookat: Point3,
+    /// Camera-relative 'up
+    pub vup: DVec3,
 }
 
+#[allow(dead_code)]
 struct ViewportData {
     img_height: i32,
     pixel_samples_scale: f64,
@@ -39,6 +46,10 @@ struct ViewportData {
     pixel00_loc: Point3,
     pixel_delta_u: DVec3,
     pixel_delta_v: DVec3,
+    // camera frame basis vectors
+    u: DVec3,
+    v: DVec3,
+    w: DVec3,
 }
 
 pub fn render<H: Hittable, P: AsRef<Path>>(
@@ -102,25 +113,29 @@ fn initialize(camera: &Camera) -> ViewportData {
 
     let pixel_samples_scale = 1.0 / camera.samples_per_pixel as f64;
 
+    let center = camera.lookfrom;
+
     // camera
-    let focal_length = 1.0;
+    let focal_length = (camera.lookfrom - camera.lookat).length();
     let theta = camera.vfov;
     let h = (theta / 2.0).tan();
     let viewport_height = 2.0 * h * focal_length;
     let viewport_width = viewport_height * (img_width as f64 / img_height as f64);
-    let center = point3(0.0, 0.0, 0.0);
+
+    let w = (camera.lookfrom - camera.lookat).normalize();
+    let u = camera.vup.cross(w).normalize();
+    let v = w.cross(u);
 
     // calculate the vectors across the horizontal and down the verical viewport edges
-    let viewport_u = dvec3(viewport_width, 0.0, 0.0);
-    let viewport_v = dvec3(0.0, -viewport_height, 0.0);
+    let viewport_u = viewport_width * u;
+    let viewport_v = viewport_height * -v;
 
     // calculate the horizontal and vertical delta vectors from pixel to pixel
     let pixel_delta_u = viewport_u / img_width as f64;
     let pixel_delta_v = viewport_v / img_height as f64;
 
     // calculate the location of the upper left pixel
-    let viewport_upper_left =
-        center - dvec3(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
+    let viewport_upper_left = center - (focal_length * w) - viewport_u / 2. - viewport_v / 2.;
     let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
     ViewportData {
@@ -130,6 +145,9 @@ fn initialize(camera: &Camera) -> ViewportData {
         pixel00_loc,
         pixel_delta_u,
         pixel_delta_v,
+        u,
+        v,
+        w,
     }
 }
 
