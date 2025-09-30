@@ -89,7 +89,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
         img_width: 1280,
-        samples_per_pixel: 512,
+        samples_per_pixel: 16,
         max_depth: 50,
         vfov: deg2rad(20.0),
         lookfrom: point3(12., 2., 3.),
