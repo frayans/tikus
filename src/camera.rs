@@ -51,11 +51,11 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         )
         .with_message("Rendering");
 
-    let mut rng = Xoshiro256Plus::seed_from_u64(1234);
-
     let pixels = (0..viewport_data.img_height)
         .cartesian_product(0..camera.img_width)
         .map(|(j, i)| {
+            let seed = (j * camera.img_width + i) as u64 ^ 1234;
+            let mut rng = Xoshiro256Plus::seed_from_u64(seed);
             let pixel_color: Color = (0..camera.samples_per_pixel)
                 .map(|_| {
                     let ray = get_ray(&mut rng, &viewport_data, i, j);
