@@ -18,7 +18,7 @@ impl HitRecord {
     pub fn with_face_normal(
         point: Point3,
         t: f64,
-        mat: &Material,
+        mat: Material,
         ray: &Ray,
         outward_normal: DVec3,
     ) -> Self {
@@ -27,7 +27,7 @@ impl HitRecord {
             point,
             t,
             normal,
-            mat: *mat,
+            mat,
 
             front_face,
         }

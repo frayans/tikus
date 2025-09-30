@@ -38,7 +38,7 @@ impl Hittable for Sphere {
 
         let p = ray.at(root);
         let record =
-            HitRecord::with_face_normal(p, root, &self.mat, ray, (p - self.center) / self.radius);
+            HitRecord::with_face_normal(p, root, self.mat, ray, (p - self.center) / self.radius);
         Some(record)
     }
 }

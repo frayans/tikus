@@ -18,7 +18,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
 
     let material_ground = Material::new_lambertian(color(0.8, 0.8, 0.0));
     let material_center = Material::new_lambertian(color(0.1, 0.2, 0.5));
-    let material_left = Material::new_metal(color(0.8, 0.8, 0.8), 0.3);
+    let material_left = Material::new_dielectric(1.50);
     let material_right = Material::new_metal(color(0.8, 0.6, 0.2), 1.0);
 
     world.add(Sphere {
@@ -44,7 +44,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
 
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
-        img_width: 1280,
+        img_width: 960,
         samples_per_pixel: 128,
         max_depth: 50,
     };

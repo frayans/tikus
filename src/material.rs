@@ -1,7 +1,7 @@
 use rand::Rng;
 
 use crate::{
-    color::Color,
+    color::{Color, color},
     hittable::HitRecord,
     math::{near_zero, random_unit_vector},
     ray::Ray,
@@ -16,6 +16,7 @@ pub struct ScatteredRay {
 pub enum Material {
     Lambertian { albedo: Color },
     Metal { albedo: Color, fuzz: f64 },
+    Dielectric { refraction_index: f64 },
 }
 
 impl Material {
@@ -23,11 +24,13 @@ impl Material {
         Self::Lambertian { albedo }
     }
 
+    /// fuzz must be in 0.0..=1.0
     pub fn new_metal(albedo: Color, fuzz: f64) -> Self {
-        if !(0.0..=1.0).contains(&fuzz) {
-            panic!("`fuzz` must be in 0.0..=1.0");
-        }
         Self::Metal { albedo, fuzz }
+    }
+
+    pub fn new_dielectric(refraction_index: f64) -> Self {
+        Self::Dielectric { refraction_index }
     }
 
     pub fn scatter<R: Rng>(
@@ -36,7 +39,7 @@ impl Material {
         ray_in: &Ray,
         hit_record: &HitRecord,
     ) -> Option<ScatteredRay> {
-        match self {
+        match *self {
             Material::Lambertian { albedo } => {
                 let mut scatter_direction = hit_record.normal + random_unit_vector(rng);
 
@@ -46,15 +49,15 @@ impl Material {
 
                 Some(ScatteredRay {
                     ray: Ray::new(hit_record.point, scatter_direction),
-                    attenuation: *albedo,
+                    attenuation: albedo,
                 })
             }
             Material::Metal { albedo, fuzz } => {
                 let reflected = ray_in.direction().reflect(hit_record.normal);
-                let reflected = reflected.normalize() + (*fuzz * random_unit_vector(rng));
+                let reflected = reflected.normalize() + (fuzz * random_unit_vector(rng));
                 let scattered = ScatteredRay {
                     ray: Ray::new(hit_record.point, reflected),
-                    attenuation: *albedo,
+                    attenuation: albedo,
                 };
                 if scattered
                     .ray
@@ -66,6 +69,22 @@ impl Material {
                 } else {
                     None
                 }
+            }
+            Material::Dielectric { refraction_index } => {
+                let attenuation = color(1.0, 1.0, 1.0);
+                let ri = if hit_record.front_face {
+                    1.0 / refraction_index
+                } else {
+                    refraction_index
+                };
+
+                let unit_dir = ray_in.direction().normalize();
+                let refracted = unit_dir.refract(hit_record.normal, ri);
+
+                Some(ScatteredRay {
+                    ray: Ray::new(hit_record.point, refracted),
+                    attenuation,
+                })
             }
         }
     }
