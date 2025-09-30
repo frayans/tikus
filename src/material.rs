@@ -79,10 +79,18 @@ impl Material {
                 };
 
                 let unit_dir = ray_in.direction().normalize();
-                let refracted = unit_dir.refract(hit_record.normal, ri);
+                let cos_theta = (-unit_dir.dot(hit_record.normal)).min(1.0);
+                let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+
+                let cannot_refract = (ri * sin_theta) > 1.0;
+                let direction = if cannot_refract {
+                    unit_dir.reflect(hit_record.normal)
+                } else {
+                    unit_dir.refract(hit_record.normal, ri)
+                };
 
                 Some(ScatteredRay {
-                    ray: Ray::new(hit_record.point, refracted),
+                    ray: Ray::new(hit_record.point, direction),
                     attenuation,
                 })
             }
