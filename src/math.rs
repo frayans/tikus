@@ -49,6 +49,15 @@ pub fn random_on_hemisphere<R: Rng>(rng: &mut R, normal: &DVec3) -> DVec3 {
     }
 }
 
+pub fn random_in_unit_disk<R: Rng>(rng: &mut R) -> DVec3 {
+    loop {
+        let p = dvec3(rng.random_range(-1.0..1.0), rng.random_range(-1.0..1.0), 0.);
+        if p.length_squared() < 1.0 {
+            return p;
+        }
+    }
+}
+
 pub fn near_zero(v: DVec3) -> bool {
     const S: f64 = 1e-8;
     (v.x.abs() < S) && (v.y.abs() < S) && (v.z.abs() < S)

@@ -13,7 +13,7 @@ use rand_xoshiro::Xoshiro256Plus;
 use crate::{
     color::{Color, color, linear_to_gamma},
     hittable::Hittable,
-    math::{DVec3, Point3, dvec3, random_double},
+    math::{DVec3, Point3, dvec3, random_double, random_in_unit_disk},
     ray::Ray,
     utility::clamp,
 };
@@ -36,6 +36,8 @@ pub struct Camera {
     pub lookat: Point3,
     /// Camera-relative 'up
     pub vup: DVec3,
+    pub defocus_angle: f64,
+    pub focus_dist: f64,
 }
 
 #[allow(dead_code)]
@@ -46,10 +48,14 @@ struct ViewportData {
     pixel00_loc: Point3,
     pixel_delta_u: DVec3,
     pixel_delta_v: DVec3,
+
     // camera frame basis vectors
     u: DVec3,
     v: DVec3,
     w: DVec3,
+
+    defocus_disk_u: DVec3,
+    defocus_disk_v: DVec3,
 }
 
 pub fn render<H: Hittable, P: AsRef<Path>>(
@@ -76,7 +82,7 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
             let mut rng = Xoshiro256Plus::seed_from_u64(seed);
             let pixel_color: Color = (0..camera.samples_per_pixel)
                 .map(|_| {
-                    let ray = get_ray(&mut rng, &viewport_data, i, j);
+                    let ray = get_ray(&mut rng, camera, &viewport_data, i, j);
                     ray_color(&mut rng, camera.max_depth, &ray, world)
                 })
                 .fold(Color::ZERO, move |acc, c| acc + c);
@@ -116,10 +122,9 @@ fn initialize(camera: &Camera) -> ViewportData {
     let center = camera.lookfrom;
 
     // camera
-    let focal_length = (camera.lookfrom - camera.lookat).length();
     let theta = camera.vfov;
     let h = (theta / 2.0).tan();
-    let viewport_height = 2.0 * h * focal_length;
+    let viewport_height = 2.0 * h * camera.focus_dist;
     let viewport_width = viewport_height * (img_width as f64 / img_height as f64);
 
     let w = (camera.lookfrom - camera.lookat).normalize();
@@ -135,8 +140,12 @@ fn initialize(camera: &Camera) -> ViewportData {
     let pixel_delta_v = viewport_v / img_height as f64;
 
     // calculate the location of the upper left pixel
-    let viewport_upper_left = center - (focal_length * w) - viewport_u / 2. - viewport_v / 2.;
+    let viewport_upper_left = center - (camera.focus_dist * w) - viewport_u / 2. - viewport_v / 2.;
     let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+
+    let defocus_radius = camera.focus_dist * (camera.defocus_angle / 2.0).tan();
+    let defocus_disk_u = u * defocus_radius;
+    let defocus_disk_v = v * defocus_radius;
 
     ViewportData {
         img_height,
@@ -148,15 +157,21 @@ fn initialize(camera: &Camera) -> ViewportData {
         u,
         v,
         w,
+        defocus_disk_u,
+        defocus_disk_v,
     }
 }
 
-fn get_ray<R: Rng>(rng: &mut R, v_data: &ViewportData, i: i32, j: i32) -> Ray {
+fn get_ray<R: Rng>(rng: &mut R, camera: &Camera, v_data: &ViewportData, i: i32, j: i32) -> Ray {
     let offset = sample_square(rng);
     let pixel_sample = v_data.pixel00_loc
         + ((i as f64 + offset.x) * v_data.pixel_delta_u)
         + ((j as f64 + offset.y) * v_data.pixel_delta_v);
-    let ray_origin = v_data.center;
+    let ray_origin = if camera.defocus_angle <= 0.0 {
+        v_data.center
+    } else {
+        defocus_disk_sample(rng, v_data)
+    };
     let ray_direction = pixel_sample - ray_origin;
 
     Ray::new(ray_origin, ray_direction)
@@ -164,6 +179,11 @@ fn get_ray<R: Rng>(rng: &mut R, v_data: &ViewportData, i: i32, j: i32) -> Ray {
 
 fn sample_square<R: Rng>(rng: &mut R) -> DVec3 {
     dvec3(random_double(rng) - 0.5, random_double(rng) - 0.5, 0.0)
+}
+
+fn defocus_disk_sample<R: Rng>(rng: &mut R, v_data: &ViewportData) -> Point3 {
+    let p = random_in_unit_disk(rng);
+    v_data.center + (p.x * v_data.defocus_disk_u) + (p.y * v_data.defocus_disk_v)
 }
 
 fn ray_color<H: Hittable, R: Rng>(rng: &mut R, max_depth: i32, ray: &Ray, world: &H) -> Color {
