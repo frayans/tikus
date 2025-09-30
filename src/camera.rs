@@ -5,7 +5,7 @@ use std::{
     path::Path,
 };
 
-use indicatif::ProgressIterator;
+use indicatif::{ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle};
 use itertools::Itertools;
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256Plus;
@@ -38,18 +38,18 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
     filename: P,
     camera: &Camera,
     world: &H,
-) -> io::Result<()> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let viewport_data = initialize(camera);
 
-    let file = File::create(filename)?;
-    let mut buf = io::BufWriter::new(file);
-
-    // writes the header
-    writeln!(
-        buf,
-        "P3\n{} {}\n255",
-        camera.img_width, viewport_data.img_height
-    )?;
+    let bar = ProgressBar::new(viewport_data.img_height as u64 * camera.img_width as u64)
+        .with_finish(ProgressFinish::AbandonWithMessage("Done!".into()))
+        .with_style(
+            ProgressStyle::with_template(
+                "{msg}: [{wide_bar:.green/cyan}] {percent}% {elapsed_precise:.dim}",
+            )?
+            .progress_chars("+> "),
+        )
+        .with_message("Rendering");
 
     let mut rng = Xoshiro256Plus::seed_from_u64(1234);
 
@@ -66,20 +66,18 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
             viewport_data.pixel_samples_scale * pixel_color
         })
         .map(|color| format_color(color))
-        .progress_count(viewport_data.img_height as u64 * camera.img_width as u64)
+        .progress_with(bar)
         .join("\n");
 
-    // for j in (0..viewport_data.img_height).progress() {
-    //     for i in 0..camera.img_width {
-    //         let mut pixel_color = Color::ZERO;
-    //         for _sample in 0..camera.samples_per_pixel {
-    //             let ray = get_ray(&mut rng, &viewport_data, i, j);
-    //             pixel_color += ray_color(&mut rng, camera.max_depth, &ray, world);
-    //         }
+    let file = File::create(filename)?;
+    let mut buf = io::BufWriter::new(file);
 
-    //         write_color(viewport_data.pixel_samples_scale * pixel_color, &mut buf)?;
-    //     }
-    // }
+    // writes the header
+    writeln!(
+        buf,
+        "P3\n{} {}\n255",
+        camera.img_width, viewport_data.img_height
+    )?;
 
     buf.write(pixels.as_bytes())?;
     buf.flush()?;
