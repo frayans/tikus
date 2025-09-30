@@ -1,9 +1,11 @@
+use rand::{Rng, SeedableRng};
+use rand_xoshiro::Xoshiro256Plus;
 use tikus::{
     camera::{Camera, render},
     color::color,
     hittable_list::HittableList,
     material::Material,
-    math::{deg2rad, dvec3, point3},
+    math::{deg2rad, dvec3, point3, random, random_double, random_range},
     sphere::Sphere,
 };
 
@@ -16,54 +18,85 @@ fn main() {
 fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let mut world = HittableList::new();
 
-    let material_ground = Material::new_lambertian(color(0.8, 0.8, 0.0));
-    let material_center = Material::new_lambertian(color(0.1, 0.2, 0.5));
-    let material_left = Material::new_dielectric(1.5);
-    let material_bubble = Material::new_dielectric(1.0 / 1.5);
-    let material_right = Material::new_metal(color(0.8, 0.6, 0.2), 1.0);
+    let ground_mat = Material::new_lambertian(color(0.5, 0.5, 0.5));
+    world.add(Sphere {
+        center: point3(0.0, -1000.0, 0.0),
+        radius: 1000.0,
+        mat: ground_mat,
+    });
 
+    for a in -11..11 {
+        for b in -11..11 {
+            let mut rng = Xoshiro256Plus::seed_from_u64((a * a) as u64 + (b * b) as u64 ^ 1234);
+            let choose_mat = random_double(&mut rng);
+            let center = point3(
+                a as f64 * random_double(&mut rng),
+                0.2,
+                b as f64 + 0.9 * random_double(&mut rng),
+            );
+
+            if (center - point3(4., 0.2, 0.)).length() > 0.9 {
+                if choose_mat < 0.8 {
+                    let albedo = random(&mut rng) * random(&mut rng);
+                    let sphere_mat = Material::new_lambertian(albedo);
+                    world.add(Sphere {
+                        center,
+                        radius: 0.2,
+                        mat: sphere_mat,
+                    });
+                } else if choose_mat < 0.95 {
+                    let albedo = random_range(&mut rng, 0.5..1.0);
+                    let fuzz = rng.random_range(0.0..0.5);
+                    let sphere_mat = Material::new_metal(albedo, fuzz);
+                    world.add(Sphere {
+                        center,
+                        radius: 0.2,
+                        mat: sphere_mat,
+                    });
+                } else {
+                    let sphere_mat = Material::new_dielectric(1.5);
+                    world.add(Sphere {
+                        center,
+                        radius: 0.2,
+                        mat: sphere_mat,
+                    });
+                }
+            }
+        }
+    }
+
+    let mat = Material::new_dielectric(1.5);
     world.add(Sphere {
-        center: point3(0., -100.5, -1.0),
-        radius: 100.0,
-        mat: material_ground,
+        center: point3(0., 1., 0.),
+        radius: 1.,
+        mat,
     });
+
+    let mat = Material::new_lambertian(color(0.4, 0.2, 0.1));
     world.add(Sphere {
-        center: point3(0., 0., -1.2),
-        radius: 0.5,
-        mat: material_center,
+        center: point3(-4., 1., 0.),
+        radius: 1.,
+        mat,
     });
-    // world.add(Sphere {
-    //     center: point3(0.0, -0.3, -0.5),
-    //     radius: 0.3,
-    //     mat: Material::new_lambertian(color(0.5, 0., 0.5)),
-    // });
+
+    let mat = Material::new_metal(color(0.7, 0.6, 0.5), 0.0);
     world.add(Sphere {
-        center: point3(-1.0, 0., -1.2),
-        radius: 0.5,
-        mat: material_left,
-    });
-    world.add(Sphere {
-        center: point3(-1.0, 0., -1.2),
-        radius: 0.4,
-        mat: material_bubble,
-    });
-    world.add(Sphere {
-        center: point3(1.0, 0., -1.2),
-        radius: 0.5,
-        mat: material_right,
+        center: point3(4., 1., 0.),
+        radius: 1.,
+        mat,
     });
 
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
-        img_width: 400,
-        samples_per_pixel: 100,
+        img_width: 1280,
+        samples_per_pixel: 512,
         max_depth: 50,
         vfov: deg2rad(20.0),
-        lookfrom: point3(-2., 2., 1.),
-        lookat: point3(0., 0., -1.),
+        lookfrom: point3(12., 2., 3.),
+        lookat: point3(0., 0., 0.),
         vup: dvec3(0., 1., 0.),
-        defocus_angle: deg2rad(10.0),
-        focus_dist: 3.4,
+        defocus_angle: deg2rad(0.6),
+        focus_dist: 10.,
     };
 
     let mut args = std::env::args();
