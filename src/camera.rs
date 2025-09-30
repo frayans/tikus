@@ -13,7 +13,7 @@ use rand_xoshiro::Xoshiro256Plus;
 use crate::{
     color::{Color, color, linear_to_gamma},
     hittable::Hittable,
-    math::{DVec3, Point3, dvec3, point3},
+    math::{DVec3, Point3, dvec3, point3, random_double},
     ray::Ray,
     utility::clamp,
 };
@@ -136,8 +136,7 @@ fn get_ray<R: Rng>(rng: &mut R, v_data: &ViewportData, i: i32, j: i32) -> Ray {
 }
 
 fn sample_square<R: Rng>(rng: &mut R) -> DVec3 {
-    let random_double = &mut move || rng.random_range(0.0..1.0);
-    dvec3(random_double() - 0.5, random_double() - 0.5, 0.0)
+    dvec3(random_double(rng) - 0.5, random_double(rng) - 0.5, 0.0)
 }
 
 fn ray_color<H: Hittable, R: Rng>(rng: &mut R, max_depth: i32, ray: &Ray, world: &H) -> Color {

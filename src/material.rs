@@ -3,7 +3,7 @@ use rand::Rng;
 use crate::{
     color::{Color, color},
     hittable::HitRecord,
-    math::{near_zero, random_unit_vector},
+    math::{near_zero, random_double, random_unit_vector},
     ray::Ray,
 };
 
@@ -83,11 +83,12 @@ impl Material {
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
                 let cannot_refract = (ri * sin_theta) > 1.0;
-                let direction = if cannot_refract {
-                    unit_dir.reflect(hit_record.normal)
-                } else {
-                    unit_dir.refract(hit_record.normal, ri)
-                };
+                let direction =
+                    if cannot_refract || self.reflectance(cos_theta, ri) > random_double(rng) {
+                        unit_dir.reflect(hit_record.normal)
+                    } else {
+                        unit_dir.refract(hit_record.normal, ri)
+                    };
 
                 Some(ScatteredRay {
                     ray: Ray::new(hit_record.point, direction),
@@ -95,5 +96,11 @@ impl Material {
                 })
             }
         }
+    }
+
+    fn reflectance(&self, cosine: f64, refraction_index: f64) -> f64 {
+        let r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+        let r0 = r0 * r0;
+        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
     }
 }

@@ -11,6 +11,11 @@ pub type Point3 = glam::DVec3;
 pub const fn point3(x: f64, y: f64, z: f64) -> Point3 {
     dvec3(x, y, z)
 }
+
+pub fn random_double<R: Rng>(rng: &mut R) -> f64 {
+    rng.random_range(0.0..1.0)
+}
+
 pub fn random<R: Rng>(rng: &mut R) -> DVec3 {
     dvec3(rng.random(), rng.random(), rng.random())
 }

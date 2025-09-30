@@ -44,7 +44,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
 
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
-        img_width: 960,
+        img_width: 640,
         samples_per_pixel: 128,
         max_depth: 50,
     };
@@ -52,8 +52,9 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args();
     let program_name = args.next().expect("program name should be available");
     let filename = args.next().unwrap_or_else(|| {
-        println!("no filename given, defaulting to `image.ppm`");
-        "image.ppm".to_string()
+        let default_fn = format!("{}w{}spp.ppm", camera.img_width, camera.samples_per_pixel);
+        println!("no filename given, defaulting to `{}`", default_fn);
+        default_fn
     });
 
     println!("{} v0.0.0", program_name);
