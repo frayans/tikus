@@ -1,3 +1,5 @@
+use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
+
 use tikus::{
     camera::{Camera, render},
     color::color,
@@ -16,35 +18,19 @@ fn main() {
 fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let mut world = HittableList::new();
 
-    let material_ground = Material::new_lambertian(color(0.8, 0.8, 0.0));
-    let material_center = Material::new_lambertian(color(0.1, 0.2, 0.5));
-    let material_left = Material::new_dielectric(1.5);
-    let material_bubble = Material::new_dielectric(1.0 / 1.5);
-    let material_right = Material::new_metal(color(0.8, 0.6, 0.2), 1.0);
+    let r = FRAC_PI_4.cos();
+
+    let material_left = Material::new_lambertian(color(0., 0., 1.));
+    let material_right = Material::new_lambertian(color(1., 0., 0.));
 
     world.add(Sphere {
-        center: point3(0.0, -100.5, -1.0),
-        radius: 100.0,
-        mat: material_ground,
-    });
-    world.add(Sphere {
-        center: point3(0.0, 0.0, -1.2),
-        radius: 0.5,
-        mat: material_center,
-    });
-    world.add(Sphere {
-        center: point3(-1.0, 0.0, -1.0),
-        radius: 0.5,
+        center: point3(-r, 0., -1.),
+        radius: r,
         mat: material_left,
     });
     world.add(Sphere {
-        center: point3(-1.0, 0.0, -1.0),
-        radius: 0.4,
-        mat: material_bubble,
-    });
-    world.add(Sphere {
-        center: point3(1.0, 0.0, -1.0),
-        radius: 0.5,
+        center: point3(r, 0., -1.),
+        radius: r,
         mat: material_right,
     });
 
@@ -53,6 +39,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
         img_width: 640,
         samples_per_pixel: 128,
         max_depth: 50,
+        vfov: FRAC_PI_2,
     };
 
     let mut args = std::env::args();
@@ -65,10 +52,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("{} v0.0.0", program_name);
     println!("Config.");
-    println!("aspect_ratio      : {}", camera.aspect_ratio);
-    println!("img_width         : {}", camera.img_width);
-    println!("samples_per_pixel : {}", camera.samples_per_pixel);
-    println!("max_depth         : {}", camera.max_depth);
+    println!("{:#?}", camera);
     println!("\nOutput -> {}", filename);
 
     render(filename, &camera, &world)?;

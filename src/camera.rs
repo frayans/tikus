@@ -18,11 +18,18 @@ use crate::{
     utility::clamp,
 };
 
+#[derive(Debug)]
 pub struct Camera {
+    /// Ratio of width over height of image
     pub aspect_ratio: f64,
+    /// Rendered image width in pixels
     pub img_width: i32,
+    /// Count of random samples per pixel
     pub samples_per_pixel: i32,
+    /// Max number of ray bounces into scene
     pub max_depth: i32,
+    /// Vertical fov (in radians)
+    pub vfov: f64,
 }
 
 struct ViewportData {
@@ -97,7 +104,9 @@ fn initialize(camera: &Camera) -> ViewportData {
 
     // camera
     let focal_length = 1.0;
-    let viewport_height = 2.0;
+    let theta = camera.vfov;
+    let h = (theta / 2.0).tan();
+    let viewport_height = 2.0 * h * focal_length;
     let viewport_width = viewport_height * (img_width as f64 / img_height as f64);
     let center = point3(0.0, 0.0, 0.0);
 
