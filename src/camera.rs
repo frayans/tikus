@@ -83,10 +83,9 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         .map(|idx| {
             let i = idx % camera.img_width;
             let j = idx / camera.img_width;
-            let seed = (j * camera.img_width + i) as u64;
-            let mut rng = Xoshiro256Plus::seed_from_u64(seed);
             (0..camera.samples_per_pixel)
-                .map(|_| {
+                .map(|s| {
+                    let mut rng = Xoshiro256Plus::seed_from_u64(s as u64);
                     let ray = get_ray(&mut rng, camera, &viewport_data, i, j);
                     ray_color(&mut rng, camera.max_depth, &ray, world)
                 })
