@@ -1,5 +1,5 @@
 # tikus
-currently reading [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
+finished reading [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 
 # chapter progress
 - [x] 2
@@ -11,6 +11,9 @@ currently reading [_Ray Tracing in One Weekend_](https://raytracing.github.io/bo
 - [x] 8
 - [x] 9
 - [x] 10
-- [ ] 11
-- [ ] 12
-- [ ] 13
+- [x] 11
+- [x] 12
+- [x] 13
+
+# todos before continuing
+- refactor the messy random functions
