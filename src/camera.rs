@@ -11,7 +11,7 @@ use indicatif::{
 use itertools::Itertools;
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256Plus;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::*;
 
 use crate::{
     color::{Color, color, linear_to_gamma},
@@ -83,14 +83,13 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         .map(|idx| {
             let i = idx % camera.img_width;
             let j = idx / camera.img_width;
-            (0..camera.samples_per_pixel)
-                .map(|s| {
-                    let mut rng = Xoshiro256Plus::seed_from_u64(s as u64);
-                    let ray = get_ray(&mut rng, camera, &viewport_data, i, j);
-                    ray_color(&mut rng, camera.max_depth, &ray, world)
-                })
-                .fold(Color::ZERO, move |acc, c| acc + c)
-                * viewport_data.pixel_samples_scale
+            let mut rng = Xoshiro256Plus::seed_from_u64(idx as u64);
+            let mut pixel_color = Color::ZERO;
+            for _ in 0..camera.samples_per_pixel {
+                let ray = get_ray(&mut rng, camera, &viewport_data, i, j);
+                pixel_color += ray_color(&mut rng, camera.max_depth, &ray, world);
+            }
+            pixel_color * viewport_data.pixel_samples_scale
         })
         .progress_with(bar)
         .collect();
