@@ -30,7 +30,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
             let mut rng = Xoshiro256Plus::seed_from_u64((a * a) as u64 + (b * b) as u64 ^ 1234);
             let choose_mat = random_double(&mut rng);
             let center = point3(
-                a as f64 * random_double(&mut rng),
+                a as f64 + 0.9 * random_double(&mut rng),
                 0.2,
                 b as f64 + 0.9 * random_double(&mut rng),
             );
@@ -89,7 +89,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
         img_width: 1280,
-        samples_per_pixel: 16,
+        samples_per_pixel: 256,
         max_depth: 50,
         vfov: deg2rad(20.0),
         lookfrom: point3(12., 2., 3.),
@@ -108,8 +108,6 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     println!("{} v0.0.0", program_name);
-    println!("Config.");
-    println!("{:#?}", camera);
     println!("\nOutput -> {}", filename);
 
     render(filename, &camera, &world)?;

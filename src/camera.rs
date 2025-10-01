@@ -5,10 +5,13 @@ use std::{
     path::Path,
 };
 
-use indicatif::{ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle};
+use indicatif::{
+    ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle,
+};
 use itertools::Itertools;
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256Plus;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
     color::{Color, color, linear_to_gamma},
@@ -65,33 +68,33 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let viewport_data = initialize(camera);
 
+    let bar_style = ProgressStyle::with_template(
+        "{msg}: [{wide_bar:.green/cyan}] {percent}% {elapsed_precise:.dim}",
+    )?
+    .progress_chars("+> ");
+
     let bar = ProgressBar::new(viewport_data.img_height as u64 * camera.img_width as u64)
-        .with_finish(ProgressFinish::AbandonWithMessage("Done!".into()))
-        .with_style(
-            ProgressStyle::with_template(
-                "{msg}: [{wide_bar:.green/cyan}] {percent}% {elapsed_precise:.dim}",
-            )?
-            .progress_chars("+> "),
-        )
+        .with_finish(ProgressFinish::Abandon)
+        .with_style(bar_style.clone())
         .with_message("Rendering");
 
-    let pixels = (0..viewport_data.img_height)
-        .cartesian_product(0..camera.img_width)
-        .map(|(j, i)| {
-            let seed = (j * camera.img_width + i) as u64 ^ 1234;
+    let pixels: Vec<Color> = (0..viewport_data.img_height * camera.img_width)
+        .into_par_iter()
+        .map(|idx| {
+            let i = idx % camera.img_width;
+            let j = idx / camera.img_width;
+            let seed = (j * camera.img_width + i) as u64;
             let mut rng = Xoshiro256Plus::seed_from_u64(seed);
-            let pixel_color: Color = (0..camera.samples_per_pixel)
+            (0..camera.samples_per_pixel)
                 .map(|_| {
                     let ray = get_ray(&mut rng, camera, &viewport_data, i, j);
                     ray_color(&mut rng, camera.max_depth, &ray, world)
                 })
-                .fold(Color::ZERO, move |acc, c| acc + c);
-
-            viewport_data.pixel_samples_scale * pixel_color
+                .fold(Color::ZERO, move |acc, c| acc + c)
+                * viewport_data.pixel_samples_scale
         })
-        .map(|color| format_color(color))
         .progress_with(bar)
-        .join("\n");
+        .collect();
 
     let file = File::create(filename)?;
     let mut buf = io::BufWriter::new(file);
@@ -103,7 +106,19 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         camera.img_width, viewport_data.img_height
     )?;
 
-    buf.write(pixels.as_bytes())?;
+    let bar = ProgressBar::new(pixels.len() as u64)
+        .with_finish(ProgressFinish::Abandon)
+        .with_style(bar_style)
+        .with_message("Writing");
+
+    buf.write(
+        pixels
+            .into_iter()
+            .map(|c| format_color(c))
+            .progress_with(bar)
+            .join("\n")
+            .as_bytes(),
+    )?;
     buf.flush()?;
 
     Ok(())
