@@ -3,6 +3,11 @@ name = "tikus"
 version = "0.0.0"
 edition = "2024"
 
+[profile.release]
+lto = "fat"
+opt-level = 3
+codegen-units = 1
+
 [dependencies]
 glam = "0.30.8"
 indicatif = { version = "0.18.0", features = ["rayon"] }

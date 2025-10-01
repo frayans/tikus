@@ -5,9 +5,7 @@ use std::{
     path::Path,
 };
 
-use indicatif::{
-    ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle,
-};
+use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
 use itertools::Itertools;
 use rand::{Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256Plus;
@@ -16,7 +14,7 @@ use rayon::prelude::*;
 use crate::{
     color::{Color, color, linear_to_gamma},
     hittable::Hittable,
-    math::{DVec3, Point3, dvec3, random_double, random_in_unit_disk},
+    math::{DVec3, Point3, dvec3, random_in_unit_disk},
     ray::Ray,
     utility::clamp,
 };
@@ -78,7 +76,7 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         .with_style(bar_style.clone())
         .with_message("Rendering");
 
-    let pixels: Vec<Color> = (0..viewport_data.img_height * camera.img_width)
+    let pixels = (0..viewport_data.img_height * camera.img_width)
         .into_par_iter()
         .map(|idx| {
             let i = idx % camera.img_width;
@@ -92,7 +90,7 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
             pixel_color * viewport_data.pixel_samples_scale
         })
         .progress_with(bar)
-        .collect();
+        .collect::<Vec<_>>();
 
     let file = File::create(filename)?;
     let mut buf = io::BufWriter::new(file);
@@ -104,16 +102,10 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         camera.img_width, viewport_data.img_height
     )?;
 
-    let bar = ProgressBar::new(pixels.len() as u64)
-        .with_finish(ProgressFinish::Abandon)
-        .with_style(bar_style)
-        .with_message("Writing");
-
     buf.write(
         pixels
             .into_iter()
             .map(|c| format_color(c))
-            .progress_with(bar)
             .join("\n")
             .as_bytes(),
     )?;
@@ -191,6 +183,7 @@ fn get_ray<R: Rng>(rng: &mut R, camera: &Camera, v_data: &ViewportData, i: i32, 
 }
 
 fn sample_square<R: Rng>(rng: &mut R) -> DVec3 {
+    let random_double = move |rng: &mut R| rng.random_range(0.0..1.0);
     dvec3(random_double(rng) - 0.5, random_double(rng) - 0.5, 0.0)
 }
 

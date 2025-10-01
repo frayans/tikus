@@ -5,7 +5,7 @@ use tikus::{
     color::color,
     hittable_list::HittableList,
     material::Material,
-    math::{deg2rad, dvec3, point3, random, random_double, random_range},
+    math::{deg2rad, dvec3, point3, random, random_range},
     sphere::Sphere,
 };
 
@@ -25,17 +25,21 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
         mat: ground_mat,
     });
 
+    let mut rng = Xoshiro256Plus::seed_from_u64(1234);
+
     for a in -11..11 {
         for b in -11..11 {
-            let mut rng = Xoshiro256Plus::seed_from_u64((a * a) as u64 + (b * b) as u64 ^ 1234);
-            let choose_mat = random_double(&mut rng);
+            let choose_mat: f64 = rng.random_range(0.0..1.0);
             let center = point3(
-                a as f64 + 0.9 * random_double(&mut rng),
+                a as f64 + 0.9 * rng.random_range(0.0..1.0),
                 0.2,
-                b as f64 + 0.9 * random_double(&mut rng),
+                b as f64 + 0.9 * rng.random_range(0.0..1.0),
             );
 
-            if (center - point3(4., 0.2, 0.)).length() > 0.9 {
+            if (center - point3(4., 0.2, 0.)).length() > 0.9
+                && (center - point3(-4., 0.2, 0.)).length() > 0.9
+                && (center - point3(0., 0.2, 0.)).length() > 0.9
+            {
                 if choose_mat < 0.8 {
                     let albedo = random(&mut rng) * random(&mut rng);
                     let sphere_mat = Material::new_lambertian(albedo);
@@ -89,7 +93,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
         img_width: 1280,
-        samples_per_pixel: 256,
+        samples_per_pixel: 512,
         max_depth: 50,
         vfov: deg2rad(20.0),
         lookfrom: point3(12., 2., 3.),
