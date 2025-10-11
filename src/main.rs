@@ -1,5 +1,5 @@
 use rand::{Rng, SeedableRng};
-use rand_xoshiro::Xoshiro256Plus;
+use rand_pcg::Pcg64;
 use tikus::{
     camera::{Camera, render},
     color::color,
@@ -9,13 +9,7 @@ use tikus::{
     sphere::Sphere,
 };
 
-fn main() {
-    if let Err(e) = try_main() {
-        eprintln!("{}", e);
-    }
-}
-
-fn try_main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut world = HittableList::new();
 
     let ground_mat = Material::new_lambertian(color(0.5, 0.5, 0.5));
@@ -25,7 +19,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
         mat: ground_mat,
     });
 
-    let mut rng = Xoshiro256Plus::seed_from_u64(1234);
+    let mut rng = Pcg64::seed_from_u64(1234);
 
     for a in -11..11 {
         for b in -11..11 {
@@ -93,7 +87,7 @@ fn try_main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera {
         aspect_ratio: 16.0 / 9.0,
         img_width: 1280,
-        samples_per_pixel: 512,
+        samples_per_pixel: 16,
         max_depth: 50,
         vfov: deg2rad(20.0),
         lookfrom: point3(12., 2., 3.),

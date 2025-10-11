@@ -1,14 +1,12 @@
 use std::{
     f64::INFINITY,
-    fs::File,
-    io::{self, Write},
+    fs::{self},
     path::Path,
 };
 
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
-use itertools::Itertools;
 use rand::{Rng, SeedableRng};
-use rand_xoshiro::Xoshiro256Plus;
+use rand_pcg::Pcg64;
 use rayon::prelude::*;
 
 use crate::{
@@ -81,7 +79,7 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         .map(|idx| {
             let i = idx % camera.img_width;
             let j = idx / camera.img_width;
-            let mut rng = Xoshiro256Plus::seed_from_u64(idx as u64);
+            let mut rng = Pcg64::seed_from_u64(idx as u64);
             let mut pixel_color = Color::ZERO;
             for _ in 0..camera.samples_per_pixel {
                 let ray = get_ray(&mut rng, camera, &viewport_data, i, j);
@@ -92,24 +90,16 @@ pub fn render<H: Hittable, P: AsRef<Path>>(
         .progress_with(bar)
         .collect::<Vec<_>>();
 
-    let file = File::create(filename)?;
-    let mut buf = io::BufWriter::new(file);
+    let contents = {
+        let mut header = format!(
+            "P3\n{} {}\n255\n",
+            camera.img_width, viewport_data.img_height
+        );
 
-    // writes the header
-    writeln!(
-        buf,
-        "P3\n{} {}\n255",
-        camera.img_width, viewport_data.img_height
-    )?;
-
-    buf.write(
-        pixels
-            .into_iter()
-            .map(|c| format_color(c))
-            .join("\n")
-            .as_bytes(),
-    )?;
-    buf.flush()?;
+        header.extend(pixels.into_iter().map(format_color));
+        header
+    };
+    fs::write(filename, contents)?;
 
     Ok(())
 }
@@ -220,5 +210,5 @@ fn format_color(c: Color) -> String {
     let ig = (256.0 * clamp(intensity.clone(), g)) as i32;
     let ib = (256.0 * clamp(intensity, b)) as i32;
 
-    format!("{} {} {}", ir, ig, ib)
+    format!("{} {} {}\n", ir, ig, ib)
 }
